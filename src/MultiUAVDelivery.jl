@@ -18,7 +18,6 @@ include("uav_dynamics.jl")
 """
 Each UAV's action is a dynamics action or a boarding action.
 """
-# TODO: Is there a more efficient way to do this? Vector{Union{}} perhaps?
 Base.@kwdef struct UAVGeneralAction{UA <: UAVAction}
     dyn_action::UA
     to_board::Bool
@@ -212,7 +211,6 @@ end
 function MAPOMDPs.agent_states(p::MultiUAVDeliveryMDP, idx::Int64)
     coordsset = vec(GridCoords[GridCoords(x, y) for y = 1:p.grid_side for x = 1:p.grid_side])
 
-    # TODO: More elegant way to do this? Also check!
     stateset = Vector{UAVGeneralState}(undef, 2*length(coordsset))
     for (i, coords) in enumerate(coordsset)
         stateset[2*i-1] = UAVGeneralState(coords, false)
@@ -224,7 +222,6 @@ end
 
 function MAPOMDPs.agent_stateindex(p::MultiUAVDeliveryMDP, idx::Int64, s::UAVGeneralState)
 
-    # TODO: Check for correctness
     # First look up index only based on coords
     # 2*coords_idx - 1 for false; 2*coords_idx for true
     coord_idx = LinearIndices((1:p.grid_side, 1:p.grid_side))[s.coords...]
@@ -247,9 +244,7 @@ function coord_graph_adj_mat(p::MultiUAVDeliveryMDP, s::AbstractVector{UAVGenera
 
     state_cg_mat = deepcopy(p.constant_cg_adj_mat)
 
-    # Iterate over states and if both are in different cliques
-    # AND Closer than threshold, add edge
-    # TODO: Discuss using CG_PROXIMITY_THRESH > PROXIMITY_THRESH
+    # Iterate over states and if both are in different cliques AND Closer than threshold, add edge
     for (i, si) in enumerate(s)
         for (j, sj) in enumerate(s)
             if i != j && p.uav_to_region_map[i] != p.uav_to_region_map[j] &&
@@ -273,7 +268,7 @@ function POMDPs.gen(p::MultiUAVDeliveryMDP, s, a, rng)
     coordgraph = coordination_graph(p, s)
     sp_vec = Vector{UAVGeneralState}(undef, nagents)
 
-    # TODO: Should this be indiv values for each agent or the vectorized cumul reward for all drones
+    # NOTE: Local reward vector, different for each agent
     r_vec = Vector{Float64}(undef, nagents)
 
     # Simple way of doing this:
@@ -282,8 +277,6 @@ function POMDPs.gen(p::MultiUAVDeliveryMDP, s, a, rng)
     # If it tries to board, check that no neighbor is in threshold and if successful, get boarding bonus (only that Agent?), else boarding penalty?
     # If it tries to move, check if any neighbor prevents it (repulsion penalty), otherwise dynamics cost
     # If it has boarded, it should only be no-op and not change it's indiv state (0,0)
-    # CANNOT board same region at same time
-
     n_prox = 0
     n_coll = 0
     for idx = 1:nagents
@@ -297,14 +290,12 @@ function POMDPs.gen(p::MultiUAVDeliveryMDP, s, a, rng)
         if a_idx.no_op
 
             # Nothing here, just copy over state (which should be 0,0)
-            # TODO: Remove this assert after debugging
             @assert s_idx.boarded == true "No-op action taken by agent $(idx) in state $((s_idx.coords, s_idx.boarded))"
             sp_vec[idx] = s_idx
             r_vec[idx] = 0.0
 
         elseif a_idx.to_board
 
-            #TODO: Remove this assert after debugging
             @assert (s_idx.boarded == false && is_in_region(p.dynamics.params, p.goal_regions[p.uav_to_region_map[idx]],
                 s_idx.coords)) "Board action taken by
                 agent $(idx) of state $(s_idx.coords) when not in region $(p.goal_regions[p.uav_to_region_map[idx]].cen) !"
@@ -340,9 +331,7 @@ function POMDPs.gen(p::MultiUAVDeliveryMDP, s, a, rng)
     end # idx in 1:n_agents
 
 
-    # Do another loop over cells and if any two in same cell, move all of them
-    # back to their original cell
-    # TODO: Any more efficient way to do this?
+    # Do another loop over cells and if any two in same cell, move all of them back to their original cell
     any_clashing_positions = true
     while any_clashing_positions
         clashing_positions = Dict{Int64,Set{Int64}}()
