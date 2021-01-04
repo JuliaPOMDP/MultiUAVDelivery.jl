@@ -261,7 +261,9 @@ end
 function MAPOMDPs.coordination_graph(p::MultiUAVDeliveryMDP, s)
     SimpleGraph(coord_graph_adj_mat(p, s))
 end
-
+function MAPOMDPs.coordination_graph(p::MultiUAVDeliveryMDP)
+    SimpleGraph(coord_graph_adj_mat(p))
+end
 
 function POMDPs.gen(p::MultiUAVDeliveryMDP, s, a, rng)
     nagents = n_agents(p)
