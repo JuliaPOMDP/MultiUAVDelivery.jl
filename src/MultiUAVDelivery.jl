@@ -4,11 +4,10 @@ using LinearAlgebra
 using Random
 using Distributions
 using StaticArrays
-using LightGraphs
+using Graphs
 
 using POMDPs
-using POMDPModelTools: ImplicitDistribution
-#using POMDPSimulators
+using POMDPTools: ImplicitDistribution
 using MultiAgentPOMDPs
 
 const MAPOMDPs = MultiAgentPOMDPs
@@ -411,7 +410,7 @@ function FirstOrderMultiUAVDelivery(; pset=PSET[1], rewset=(goal_bonus=1000.0, p
                               CG_PROXIMITY_THRESH=3.0*pset.XY_AXIS_RES)
 
     dynamics = FirstOrderUAVDynamics(timestep=1.0,
-                                     noise=Distributions.MvNormal([pset.NOISESTD, pset.NOISESTD]),
+                                    noise=Distributions.MvNormal(LinearAlgebra.Diagonal(map(abs2, [pset.NOISESTD, pset.NOISESTD]))),
                                      params=uavparams)
 
     goal_regions, region_to_uavids = get_quadrant_goal_regions(pset.nagents,
