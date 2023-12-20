@@ -4,11 +4,10 @@ using LinearAlgebra
 using Random
 using Distributions
 using StaticArrays
-using LightGraphs
+using Graphs
 
 using POMDPs
-using POMDPModelTools: ImplicitDistribution
-#using POMDPSimulators
+using POMDPTools: ImplicitDistribution
 using MultiAgentPOMDPs
 
 const MAPOMDPs = MultiAgentPOMDPs
